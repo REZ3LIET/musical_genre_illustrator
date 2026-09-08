@@ -54,8 +54,12 @@ local_image_pipe = DiffusionPipeline.from_pretrained(
 # NOTE: do NOT call .to("cuda") here. Under ZeroGPU, CUDA can only be
 # touched inside a function decorated with @spaces.GPU (see generate_image_local).
 
-client = InferenceClient(token=HF_TOKEN)
-print("All models ready.")
+def get_client(hf_token: gr.OAuthToken = None):
+    token = getattr(hf_token, "token", None)
+    if not token:
+        return "", "### Login Required\n\nLog in with Hugging Face to use API mode."
+    client = InferenceClient(token=token)
+    print("API model ready.")
 
 
 # ---------------------------------------------------------------------------
@@ -85,6 +89,7 @@ def create_visual_prompt(genre):
     Return only the image generation prompt, nothing else.
     """
     try:
+        client = get_client()
         response = client.chat_completion(
             model=TEXT_MODEL_ID,
             messages=[{"role": "user", "content": instruction}],
@@ -110,6 +115,7 @@ def generate_image_local(prompt):
 
 def generate_image_remote(prompt):
     try:
+        client = get_client()
         return client.text_to_image(prompt, model=REMOTE_IMAGE_MODEL_ID)
     except Exception as e:
         print(f"[ERROR] Remote image generation failed: {e}")
@@ -166,6 +172,8 @@ with gr.Blocks(title="Music-to-Art Generator") as demo:
     prompt_output = gr.Textbox(label="AI Interpretation", lines=3)
     image_output = gr.Image(label="Generated Artwork")
     file_output = gr.File(label="Saved image file")
+
+    gr.LoginButton()
 
     analyze_btn.click(
         fn=analyze_music,
