@@ -54,10 +54,10 @@ local_image_pipe = DiffusionPipeline.from_pretrained(
 # NOTE: do NOT call .to("cuda") here. Under ZeroGPU, CUDA can only be
 # touched inside a function decorated with @spaces.GPU (see generate_image_local).
 
-def get_client():
+def get_client(hf_token: gr.OAuthToken = None):
     token = getattr(hf_token, "token", None)
-        if not token:
-            return "", "### Login Required\n\nLog in with Hugging Face to use API mode."
+    if not token:
+        return "", "### Login Required\n\nLog in with Hugging Face to use API mode."
     client = InferenceClient(token=token)
     print("API model ready.")
 
@@ -172,6 +172,8 @@ with gr.Blocks(title="Music-to-Art Generator") as demo:
     prompt_output = gr.Textbox(label="AI Interpretation", lines=3)
     image_output = gr.Image(label="Generated Artwork")
     file_output = gr.File(label="Saved image file")
+
+    gr.LoginButton()
 
     analyze_btn.click(
         fn=analyze_music,
