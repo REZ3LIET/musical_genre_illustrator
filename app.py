@@ -56,8 +56,11 @@ local_image_pipe = DiffusionPipeline.from_pretrained(
 
 def get_client(hf_token: gr.OAuthToken = None):
     token = getattr(hf_token, "token", None)
+
     if not token:
-        return "", "### Login Required\n\nLog in with Hugging Face to use API mode."
+        print("Login required.")
+        return None
+
     client = InferenceClient(token=token)
     print("API model ready.")
     return client
@@ -78,7 +81,7 @@ def classify_audio(audio_file):
 # ---------------------------------------------------------------------------
 # STEP 2: Genre -> creative prompt (REMOTE LLM)
 # ---------------------------------------------------------------------------
-def create_visual_prompt(genre):
+def create_visual_prompt(genre, hf_token):
     instruction = f"""
     The uploaded music has been classified as {genre}.
 
@@ -89,7 +92,10 @@ def create_visual_prompt(genre):
     Return only the image generation prompt, nothing else.
     """
     try:
-        client = get_client()
+        client = get_client(hf_token)
+
+        if client is None:
+            Exception("Please log in with Hugging Face.")
         response = client.chat_completion(
             model=TEXT_MODEL_ID,
             messages=[{"role": "user", "content": instruction}],
@@ -113,9 +119,12 @@ def generate_image_local(prompt):
     return image
 
 
-def generate_image_remote(prompt):
+def generate_image_remote(prompt, hf_token):
     try:
-        client = get_client()
+        client = get_client(hf_token)
+
+        if client is None:
+            Exception("Please log in with Hugging Face.")
         return client.text_to_image(prompt, model=REMOTE_IMAGE_MODEL_ID)
     except Exception as e:
         print(f"[ERROR] Remote image generation failed: {e}")
@@ -125,7 +134,7 @@ def generate_image_remote(prompt):
 # ---------------------------------------------------------------------------
 # FULL PIPELINE
 # ---------------------------------------------------------------------------
-def analyze_music(audio_file, use_local_image_gen):
+def analyze_music(audio_file, use_local_image_gen, hf_token):
     if audio_file is None:
         return "No file uploaded", "N/A", "N/A", None, None
 
@@ -139,8 +148,8 @@ def analyze_music(audio_file, use_local_image_gen):
         )
         image = generate_image_local(visual_prompt)
     else:
-        visual_prompt = create_visual_prompt(genre)
-        image = generate_image_remote(visual_prompt)
+        visual_prompt = create_visual_prompt(genre, hf_token)
+        image = generate_image_remote(visual_prompt, hf_token)
 
     saved_path = None
     if image is not None:
@@ -162,6 +171,8 @@ with gr.Blocks(title="Music-to-Art Generator") as demo:
     )
 
     audio_input = gr.Audio(type="filepath", label="Upload Audio")
+    gr.LoginButton()
+    hf_token = gr.OAuthToken()
     use_local_toggle = gr.Checkbox(label="Use Local Model for image generation", value=False)
     analyze_btn = gr.Button("Analyze Music", variant="primary")
 
@@ -173,11 +184,9 @@ with gr.Blocks(title="Music-to-Art Generator") as demo:
     image_output = gr.Image(label="Generated Artwork")
     file_output = gr.File(label="Saved image file")
 
-    gr.LoginButton()
-
     analyze_btn.click(
         fn=analyze_music,
-        inputs=[audio_input, use_local_toggle],
+        inputs=[audio_input, use_local_toggle, hf_token],
         outputs=[genre_output, confidence_output, prompt_output, image_output, file_output],
     )
 
