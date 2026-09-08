@@ -60,7 +60,7 @@ def get_client(hf_token: gr.OAuthToken = None):
         return "", "### Login Required\n\nLog in with Hugging Face to use API mode."
     client = InferenceClient(token=token)
     print("API model ready.")
-
+    return client
 
 # ---------------------------------------------------------------------------
 # STEP 1: Genre classification (LOCAL)
