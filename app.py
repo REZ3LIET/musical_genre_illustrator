@@ -95,7 +95,7 @@ def create_visual_prompt(genre, hf_token):
         client = get_client(hf_token)
 
         if client is None:
-            Exception("Please log in with Hugging Face.")
+            raise Exception("Please log in with Hugging Face.")
         response = client.chat_completion(
             model=TEXT_MODEL_ID,
             messages=[{"role": "user", "content": instruction}],
@@ -124,7 +124,7 @@ def generate_image_remote(prompt, hf_token):
         client = get_client(hf_token)
 
         if client is None:
-            Exception("Please log in with Hugging Face.")
+            raise Exception("Please log in with Hugging Face.")
         return client.text_to_image(prompt, model=REMOTE_IMAGE_MODEL_ID)
     except Exception as e:
         print(f"[ERROR] Remote image generation failed: {e}")
@@ -134,7 +134,7 @@ def generate_image_remote(prompt, hf_token):
 # ---------------------------------------------------------------------------
 # FULL PIPELINE
 # ---------------------------------------------------------------------------
-def analyze_music(audio_file, use_local_image_gen, hf_token):
+def analyze_music(audio_file, use_local_image_gen, hf_token: gr.OAuthToken=None):
     if audio_file is None:
         return "No file uploaded", "N/A", "N/A", None, None
 
@@ -172,9 +172,7 @@ with gr.Blocks(title="Music-to-Art Generator") as demo:
 
     audio_input = gr.Audio(type="filepath", label="Upload Audio")
     gr.LoginButton()
-    hf_token = None
-    # hf_token = gr.OAuthToken()
-    use_local_toggle = gr.Checkox(label="Use Local Model for image generation", value=False)
+    use_local_toggle = gr.Checkbox(label="Use Local Model for image generation", value=False)
     analyze_btn = gr.Button("Analyze Music", variant="primary")
 
     with gr.Row():
@@ -187,7 +185,7 @@ with gr.Blocks(title="Music-to-Art Generator") as demo:
 
     analyze_btn.click(
         fn=analyze_music,
-        inputs=[audio_input, use_local_toggle, hf_token],
+        inputs=[audio_input, use_local_toggle],
         outputs=[genre_output, confidence_output, prompt_output, image_output, file_output],
     )
 
