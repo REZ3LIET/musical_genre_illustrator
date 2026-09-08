@@ -172,8 +172,9 @@ with gr.Blocks(title="Music-to-Art Generator") as demo:
 
     audio_input = gr.Audio(type="filepath", label="Upload Audio")
     gr.LoginButton()
-    hf_token = gr.OAuthToken()
-    use_local_toggle = gr.Checkbox(label="Use Local Model for image generation", value=False)
+    hf_token = None
+    # hf_token = gr.OAuthToken()
+    use_local_toggle = gr.Checkox(label="Use Local Model for image generation", value=False)
     analyze_btn = gr.Button("Analyze Music", variant="primary")
 
     with gr.Row():
