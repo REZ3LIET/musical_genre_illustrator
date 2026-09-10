@@ -9,9 +9,11 @@ import sys
 import unittest
 
 # Add the project root to sys.path so `app` can be imported from tests/test.py.
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-if PROJECT_ROOT not in sys.path:
-    sys.path.insert(0, PROJECT_ROOT)
+########################### Failure Setup Start ######################################
+# PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+# if PROJECT_ROOT not in sys.path:
+#     sys.path.insert(0, PROJECT_ROOT)
+########################### Failure Setup Done #######################################
 
 from app import classify_audio, generate_image_local, FALLBACK_PROMPTS
 
